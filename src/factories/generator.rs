@@ -1,6 +1,9 @@
-use crate::model::Transfer;
 use rand::{distributions::Alphanumeric, Rng};
-use std::time::{SystemTime, UNIX_EPOCH};
+
+use crate::{
+    models::transfer::Transfer,
+    utils::time::{Now, SystemNow},
+};
 
 pub trait TransferGenerator {
     fn generate(&self, count: usize) -> Vec<Transfer>;
@@ -42,10 +45,7 @@ impl Default for DefaultTransferGenerator {
 impl TransferGenerator for DefaultTransferGenerator {
     fn generate(&self, count: usize) -> Vec<Transfer> {
         let mut rng = rand::thread_rng();
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_secs();
+        let now = SystemNow::now_unix();
 
         (0..count)
             .map(|_| {

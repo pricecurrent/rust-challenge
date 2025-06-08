@@ -1,3 +1,3 @@
-pub mod generator;
-pub mod pipeline;
-pub mod storage;
+pub mod analytics;
+pub mod pipeline_orig;
+pub mod stats;

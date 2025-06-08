@@ -1,4 +1,5 @@
-use crate::model::{Transfer, UserStats};
+use crate::models::transfer::Transfer;
+use crate::models::user_stats::UserStats;
 use std::collections::HashMap;
 
 pub fn calculate_user_stats(transfers: &[Transfer]) -> Vec<UserStats> {
@@ -37,8 +38,6 @@ pub fn calculate_user_stats(transfers: &[Transfer]) -> Vec<UserStats> {
         .chain(sell_prices.keys())
         .cloned()
         .collect();
-
-    dbg!(&all_addresses.len());
 
     all_addresses
         .into_iter()

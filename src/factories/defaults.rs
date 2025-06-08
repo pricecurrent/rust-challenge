@@ -1,7 +1,6 @@
-use crate::services::{
-    generator::{DefaultTransferGenerator, TransferGenConfig, TransferGenerator},
-    storage::{mock::MockStorage, Storage},
-};
+use crate::repositories::{mock::MockStorage, storage::Storage};
+
+use super::generator::{DefaultTransferGenerator, TransferGenConfig, TransferGenerator};
 
 pub fn generator() -> GeneratorBuilder {
     GeneratorBuilder {
