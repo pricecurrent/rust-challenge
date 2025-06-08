@@ -42,15 +42,18 @@ impl Default for DefaultTransferGenerator {
 impl TransferGenerator for DefaultTransferGenerator {
     fn generate(&self, count: usize) -> Vec<Transfer> {
         let mut rng = rand::thread_rng();
-        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
 
         (0..count)
             .map(|_| {
                 let from = rand_address(&mut rng);
                 let to = rand_address(&mut rng);
-                let amount = rng.gen_range(self.config.min_amount..self.config.max_amount);
-                let usd_price = rng.gen_range(self.config.min_price..self.config.max_price);
-                let ts = now - rng.gen_range(0..self.config.max_age_secs);
+                let amount = rng.gen_range(self.config.min_amount..=self.config.max_amount);
+                let usd_price = rng.gen_range(self.config.min_price..=self.config.max_price);
+                let ts = now - rng.gen_range(0..=self.config.max_age_secs);
 
                 Transfer {
                     ts,

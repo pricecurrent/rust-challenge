@@ -1,15 +1,19 @@
-mod model;
-mod generator;
-mod pipeline;
-mod storage;
+#![allow(dead_code)]
 
-use generator::generate_transfers;
-use pipeline::calculate_user_stats;
+mod defaults;
+mod model;
+mod services;
+
+use defaults::{generator, storage};
+use services::pipeline::calculate_user_stats;
 
 fn main() {
-    let transfers = generate_transfers(10_000);
+    let mut storage = storage();
+    let transfers = generator().build().generate(1);
 
-    let stats = calculate_user_stats(&transfers);
+    storage.insert_all(transfers);
+
+    let stats = calculate_user_stats(storage.get());
 
     for stat in stats.iter().take(10) {
         println!("{:?}", stat);

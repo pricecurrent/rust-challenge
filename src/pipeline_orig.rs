@@ -13,15 +13,32 @@ pub fn calculate_user_stats(transfers: &[Transfer]) -> Vec<UserStats> {
 
         let to_balance = balances.get(&t.to).copied().unwrap_or(0.0);
         let from_balance = balances.get(&t.from).copied().unwrap_or(0.0);
-        max_balances.entry(t.to.clone()).and_modify(|b| *b = b.max(to_balance)).or_insert(to_balance);
-        max_balances.entry(t.from.clone()).and_modify(|b| *b = b.max(from_balance)).or_insert(from_balance);
+        max_balances
+            .entry(t.to.clone())
+            .and_modify(|b| *b = b.max(to_balance))
+            .or_insert(to_balance);
+        max_balances
+            .entry(t.from.clone())
+            .and_modify(|b| *b = b.max(from_balance))
+            .or_insert(from_balance);
 
-        buy_prices.entry(t.to.clone()).or_default().push((t.usd_price, t.amount));
-        sell_prices.entry(t.from.clone()).or_default().push((t.usd_price, t.amount));
+        buy_prices
+            .entry(t.to.clone())
+            .or_default()
+            .push((t.usd_price, t.amount));
+        sell_prices
+            .entry(t.from.clone())
+            .or_default()
+            .push((t.usd_price, t.amount));
     }
 
-    let all_addresses: std::collections::HashSet<_> =
-        buy_prices.keys().chain(sell_prices.keys()).cloned().collect();
+    let all_addresses: std::collections::HashSet<_> = buy_prices
+        .keys()
+        .chain(sell_prices.keys())
+        .cloned()
+        .collect();
+
+    dbg!(&all_addresses.len());
 
     all_addresses
         .into_iter()
@@ -31,8 +48,15 @@ pub fn calculate_user_stats(transfers: &[Transfer]) -> Vec<UserStats> {
             let total_volume: f64 = buys.iter().chain(&sells).map(|(_, amt)| amt).sum();
 
             let avg = |data: &[(f64, f64)]| {
-                let (sum_px, sum_amt): (f64, f64) = data.iter().copied().fold((0.0, 0.0), |acc, (p, a)| (acc.0 + p * a, acc.1 + a));
-                if sum_amt > 0.0 { sum_px / sum_amt } else { 0.0 }
+                let (sum_px, sum_amt): (f64, f64) = data
+                    .iter()
+                    .copied()
+                    .fold((0.0, 0.0), |acc, (p, a)| (acc.0 + p * a, acc.1 + a));
+                if sum_amt > 0.0 {
+                    sum_px / sum_amt
+                } else {
+                    0.0
+                }
             };
 
             UserStats {
