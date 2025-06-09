@@ -1,14 +1,17 @@
 use rust_challenge::factories::defaults::generator;
-use rust_challenge::factories::defaults::storage;
+use rust_challenge::repositories::mock::MockStorage;
+use rust_challenge::repositories::storage::Storage;
 use rust_challenge::services::analytics::Analytics;
+use rust_challenge::services::stats::calculator::StatsCalculator;
 
 fn main() {
-    let mut storage = storage();
     let transfers = generator().build().generate(10_000);
 
+    let mut storage = MockStorage::default();
+    let calculator = StatsCalculator::new();
     storage.insert_all(transfers);
 
-    let stats = Analytics::new(storage).get_stats();
+    let stats = Analytics::new(storage, calculator).get_stats();
 
     for stat in stats.iter().take(10) {
         println!("{:?}", stat);

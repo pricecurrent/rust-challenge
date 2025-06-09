@@ -3,18 +3,77 @@ use crate::{
     repositories::storage::Storage,
 };
 
-use super::stats::pipeline::calculate_user_stats;
+use super::stats::calculator::CalculatesStats;
 
-pub struct Analytics {
-    storage: Box<dyn Storage>,
+pub struct Analytics<C, S>
+where
+    S: Storage,
+    C: CalculatesStats,
+{
+    storage: S,
+    calculator: C,
 }
 
-impl Analytics {
-    pub fn new(storage: Box<dyn Storage>) -> Self {
-        Analytics { storage }
+impl<C, S> Analytics<C, S>
+where
+    S: Storage,
+    C: CalculatesStats,
+{
+    pub fn new(storage: S, calculator: C) -> Self {
+        Analytics {
+            storage,
+            calculator,
+        }
     }
 
     pub fn get_stats(&self) -> Vec<UserStats> {
-        calculate_user_stats(&self.storage.get_sorted(TransferOrdering::Chronological))
+        let transfers = self.storage.get_sorted(TransferOrdering::Chronological);
+        self.calculator.calculate_user_stats(&transfers)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use anyhow::anyhow;
+
+    use crate::{
+        models::user_stats::UserStats, repositories::mock::MockStorage,
+        services::stats::calculator::MockCalculatesStats,
+    };
+
+    use super::Analytics;
+
+    #[test]
+    fn delegates_to_calculator_to_retrieve_the_stats() -> Result<(), anyhow::Error> {
+        let storage = MockStorage::default();
+        let mut calculator = MockCalculatesStats::new();
+
+        let expected_stats = vec![UserStats {
+            max_balance: 100.0,
+            ..Default::default()
+        }];
+
+        calculator
+            .expect_calculate_user_stats()
+            .once()
+            .returning(move |_| expected_stats.clone());
+
+        let analytics = Analytics::new(storage, calculator);
+
+        let stats = analytics.get_stats();
+
+        assert_eq!(stats.len(), 1);
+
+        assert_eq!(
+            stats
+                .first()
+                .ok_or_else(|| anyhow!("Exactly one result expected"))?
+                .max_balance,
+            100.0,
+            "Expecting mocked results"
+        );
+
+        Ok(())
     }
 }

@@ -1,15 +1,9 @@
-use crate::repositories::{mock::MockStorage, storage::Storage};
-
 use super::generator::{DefaultTransferGenerator, TransferGenConfig, TransferGenerator};
 
 pub fn generator() -> GeneratorBuilder {
     GeneratorBuilder {
         config: TransferGenConfig::default(),
     }
-}
-
-pub fn storage() -> Box<dyn Storage> {
-    Box::new(MockStorage::default())
 }
 
 pub struct GeneratorBuilder {
