@@ -5,7 +5,6 @@ use crate::{
 
 use super::stats::pipeline::calculate_user_stats;
 
-#[allow(dead_code)]
 pub struct Analytics {
     storage: Box<dyn Storage>,
 }
