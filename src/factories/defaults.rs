@@ -1,4 +1,11 @@
-use super::generator::{DefaultTransferGenerator, TransferGenConfig, TransferGenerator};
+use clickhouse::Client;
+
+use crate::repositories::clickhouse::ClickhouseStorage;
+
+use super::{
+    clickhouse::ClickhouseClientConfig,
+    generator::{DefaultTransferGenerator, TransferGenConfig, TransferGenerator},
+};
 
 pub fn generator() -> GeneratorBuilder {
     GeneratorBuilder {
