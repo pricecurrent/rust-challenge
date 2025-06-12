@@ -1,5 +1,3 @@
-use crate::repositories::mock::MockStorage;
-
 use super::generator::{DefaultTransferGenerator, TransferGenConfig, TransferGenerator};
 
 pub fn generator() -> GeneratorBuilder {
@@ -21,11 +19,5 @@ impl GeneratorBuilder {
         Box::new(DefaultTransferGenerator {
             config: self.config,
         })
-    }
-}
-
-impl Default for MockStorage {
-    fn default() -> Self {
-        MockStorage { transfers: vec![] }
     }
 }

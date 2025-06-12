@@ -13,11 +13,11 @@ pub struct App<S: Storage, C: CalculatesStats> {
 
 impl<S, C> App<S, C>
 where
-    S: Storage,
+    S: Storage + Send + Sync,
     C: CalculatesStats,
 {
     pub async fn run(mut self, transfer_count: usize) -> anyhow::Result<Vec<UserStats>> {
-        let transfers = self.generator.generate(transfer_count);
+        let transfers = self.generator.generate(transfer_count)?;
 
         self.storage.insert_all(&transfers).await?;
 

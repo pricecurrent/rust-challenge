@@ -9,6 +9,12 @@ pub struct MockStorage {
     pub transfers: Vec<Transfer>,
 }
 
+impl Default for MockStorage {
+    fn default() -> Self {
+        MockStorage { transfers: vec![] }
+    }
+}
+
 #[async_trait]
 impl Storage for MockStorage {
     async fn get_sorted(&self, transfer_ordering: TransferOrdering) -> Result<Vec<Transfer>> {
