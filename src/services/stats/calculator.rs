@@ -67,7 +67,7 @@ mod tests {
             ..Default::default()
         };
 
-        let transfers = generator().with_config(config).build().generate(1);
+        let transfers = generator().with_config(config).build().generate(1)?;
 
         // Act: calculate user stats over the transfers
         let stats = StatsCalculator.calculate_user_stats(&transfers);
@@ -115,14 +115,14 @@ mod tests {
 
         let transfers = vec![
             Transfer {
-                ts: SystemNow::now_unix(),
+                ts: SystemNow::now_unix()?,
                 from: bob.clone(),
                 to: john.clone(),
                 amount: 10.0,
                 usd_price: 50.0,
             },
             Transfer {
-                ts: SystemNow::now_unix(),
+                ts: SystemNow::now_unix()?,
                 from: john.clone(),
                 to: bob.clone(),
                 amount: 5.0,

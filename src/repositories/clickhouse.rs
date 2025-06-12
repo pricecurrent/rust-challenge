@@ -119,7 +119,7 @@ mod tests {
         let mut storage = ClickhouseStorage::new(client);
         let recording: RecordControl<Transfer> = mock.add(handlers::record());
 
-        let transfers = generator().build().generate(20);
+        let transfers = generator().build().generate(20)?;
 
         storage.insert_all(&transfers).await?;
 

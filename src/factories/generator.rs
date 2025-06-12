@@ -1,3 +1,4 @@
+use anyhow::Result;
 use rand::{distributions::Alphanumeric, Rng};
 
 use crate::{
@@ -6,7 +7,7 @@ use crate::{
 };
 
 pub trait TransferGenerator {
-    fn generate(&self, count: usize) -> Vec<Transfer>;
+    fn generate(&self, count: usize) -> Result<Vec<Transfer>>;
 }
 
 #[derive(Debug, Clone)]
@@ -43,11 +44,11 @@ impl Default for DefaultTransferGenerator {
 }
 
 impl TransferGenerator for DefaultTransferGenerator {
-    fn generate(&self, count: usize) -> Vec<Transfer> {
+    fn generate(&self, count: usize) -> anyhow::Result<Vec<Transfer>> {
         let mut rng = rand::thread_rng();
-        let now = SystemNow::now_unix();
+        let now = SystemNow::now_unix()?;
 
-        (0..count)
+        let ts = (0..count)
             .map(|_| {
                 let from = rand_address(&mut rng);
                 let to = rand_address(&mut rng);
@@ -63,7 +64,9 @@ impl TransferGenerator for DefaultTransferGenerator {
                     usd_price,
                 }
             })
-            .collect()
+            .collect();
+
+        Ok(ts)
     }
 }
 
