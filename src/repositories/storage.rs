@@ -1,5 +1,5 @@
+use anyhow::Result;
 use async_trait::async_trait;
-use clickhouse::error::Result;
 
 use crate::models::transfer::{Transfer, TransferOrdering};
 

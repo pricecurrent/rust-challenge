@@ -1,7 +1,8 @@
-use anyhow::Context;
+use anyhow::anyhow;
+use anyhow::Result;
 use async_trait::async_trait;
+use clickhouse::sql::Identifier;
 use clickhouse::Client;
-use clickhouse::{error::Result, sql::Identifier};
 
 use crate::models::transfer::{Transfer, TransferOrdering};
 
@@ -18,13 +19,14 @@ impl ClickhouseStorage {
         ClickhouseStorage { client }
     }
 
-    pub async fn ensure_schema(&self) -> anyhow::Result<()> {
+    pub async fn ensure_schema(&self) -> Result<()> {
         self.client
             .query("DROP TABLE IF EXISTS ?")
             .bind(Identifier(TABLE))
             .with_option("wait_end_of_query", "1")
             .execute()
-            .await?;
+            .await
+            .map_err(|e| anyhow!("Could not drop table: {}", e))?;
 
         let query = r"
             CREATE TABLE IF NOT EXISTS ? (
@@ -42,7 +44,7 @@ impl ClickhouseStorage {
             .bind(Identifier(TABLE))
             .execute()
             .await
-            .context("Failed to create transfers table")?;
+            .map_err(|e| anyhow!("Could not create table {}: {}", TABLE, e))?;
 
         Ok(())
     }
@@ -64,17 +66,31 @@ impl Storage for ClickhouseStorage {
             .query(&query)
             .bind(Identifier(TABLE))
             .fetch_all::<Transfer>()
-            .await;
+            .await
+            .map_err(|e| anyhow!("Could not fetch transfers: {}", e))?;
 
-        res
+        Ok(res)
     }
 
     async fn insert_all(&mut self, transfers: &[Transfer]) -> Result<()> {
-        let mut insert = self.client.insert("transfers")?;
+        let mut insert = self
+            .client
+            .insert("transfers")
+            .map_err(|e| anyhow!("Could not insert transfers: {}", e))?;
+
         for row in transfers {
-            insert.write(row).await?;
+            insert
+                .write(row)
+                .await
+                .map_err(|e| anyhow!("Could not insert transfers: {}", e))?;
         }
-        insert.end().await
+
+        insert
+            .end()
+            .await
+            .map_err(|e| anyhow!("Could not insert transfers: {}", e))?;
+
+        Ok(())
     }
 }
 
@@ -85,6 +101,7 @@ mod tests {
         clickhouse::{ClickhouseClientConfig, ClickhouseFactory},
         defaults::generator,
     };
+    use anyhow::Result;
     use clickhouse::{
         test::{
             handlers::{self, RecordControl},
@@ -112,10 +129,10 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn it_gets_sorted_data() {
+    async fn it_gets_sorted_data() -> Result<()> {
         dotenv().ok();
         let config = ClickhouseClientConfig::from_env().unwrap();
-        let mut storage = ClickhouseFactory::storage(config).await;
+        let mut storage = ClickhouseFactory::storage(config).await?;
 
         let transfers = vec![
             Transfer {
@@ -155,6 +172,8 @@ mod tests {
                     ..Default::default()
                 },
             ]
-        )
+        );
+
+        Ok(())
     }
 }

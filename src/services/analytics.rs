@@ -2,6 +2,7 @@ use crate::{
     models::{transfer::TransferOrdering, user_stats::UserStats},
     repositories::storage::Storage,
 };
+use anyhow::{anyhow, Result};
 
 use super::stats::calculator::CalculatesStats;
 
@@ -26,12 +27,14 @@ where
         }
     }
 
-    pub async fn get_stats(&self) -> Vec<UserStats> {
+    pub async fn get_stats(&self) -> Result<Vec<UserStats>> {
         let transfers = self
             .storage
             .get_sorted(TransferOrdering::Chronological)
-            .await;
-        self.calculator.calculate_user_stats(&transfers.unwrap())
+            .await
+            .map_err(|e| anyhow!("Could not calculate stats: {}", e))?;
+
+        Ok(self.calculator.calculate_user_stats(&transfers))
     }
 }
 
@@ -39,6 +42,7 @@ where
 mod tests {
 
     use anyhow::anyhow;
+    use anyhow::Result;
 
     use crate::{
         models::user_stats::UserStats, repositories::mock::MockStorage,
@@ -48,7 +52,7 @@ mod tests {
     use super::Analytics;
 
     #[tokio::test]
-    async fn delegates_to_calculator_to_retrieve_the_stats() -> Result<(), anyhow::Error> {
+    async fn delegates_to_calculator_to_retrieve_the_stats() -> Result<()> {
         let storage = MockStorage::default();
         let mut calculator = MockCalculatesStats::new();
 
@@ -64,7 +68,7 @@ mod tests {
 
         let analytics = Analytics::new(storage, calculator);
 
-        let stats = analytics.get_stats().await;
+        let stats = analytics.get_stats().await?;
 
         assert_eq!(stats.len(), 1);
 
