@@ -1,26 +1,23 @@
-use anyhow::Context;
+use anyhow::Result;
 use clickhouse::Client;
 
 use crate::{repositories::clickhouse::ClickhouseStorage, utils::env::env_get};
 
+#[derive(Debug)]
 pub struct ClickhouseClientConfig {
     pub host: String,
     pub user: String,
     pub password: String,
-    pub port: u32,
     pub database: String,
 }
 
 impl ClickhouseClientConfig {
     pub fn from_env() -> Result<Self, anyhow::Error> {
         Ok(ClickhouseClientConfig {
-            host: env_get("CLICKHOUSE_HOST")?,
+            host: env_get("CLICKHOUSE_URL")?,
             user: env_get("CLICKHOUSE_USER")?,
             password: env_get("CLICKHOUSE_PASSWORD")?,
-            port: env_get("CLICKHOUSE_PORT")?
-                .parse()
-                .context("CLICKHOUSE_PORT env variable should be a valid number")?,
-            database: env_get("CLICKHOUSE_DATABASE")?,
+            database: env_get("CLICKHOUSE_DB")?,
         })
     }
 }
@@ -28,13 +25,16 @@ impl ClickhouseClientConfig {
 pub struct ClickhouseFactory;
 
 impl ClickhouseFactory {
-    pub fn storage(config: ClickhouseClientConfig) -> ClickhouseStorage<Client> {
+    pub async fn storage(config: ClickhouseClientConfig) -> ClickhouseStorage {
         let client = Client::default()
-            .with_url(config.host)
-            .with_user(config.user)
-            .with_password(config.password)
-            .with_database(config.database);
+            .with_url(&config.host)
+            .with_user(&config.user)
+            .with_password(&config.password)
+            .with_database(&config.database);
 
-        ClickhouseStorage::new(client)
+        let storage = ClickhouseStorage::new(client);
+        let _ = storage.ensure_schema().await;
+
+        storage
     }
 }

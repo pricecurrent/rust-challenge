@@ -5,18 +5,20 @@ use rust_challenge::repositories::storage::Storage;
 use rust_challenge::services::analytics::Analytics;
 use rust_challenge::services::stats::calculator::StatsCalculator;
 
-fn main() -> Result<(), anyhow::Error> {
+#[tokio::main]
+async fn main() -> Result<(), anyhow::Error> {
     dotenv().ok();
 
-    let transfers = generator().build().generate(10_000);
+    let transfers = generator().build().generate(20);
 
-    let mut storage = ClickhouseFactory::storage(ClickhouseClientConfig::from_env()?);
+    let config = ClickhouseClientConfig::from_env()?;
+    let mut storage = ClickhouseFactory::storage(config).await;
     // let mut storage = MockStorage::default();
+    let _ = storage.insert_all(&transfers).await;
 
     let calculator = StatsCalculator::new();
-    storage.insert_all(transfers);
 
-    let stats = Analytics::new(storage, calculator).get_stats();
+    let stats = Analytics::new(storage, calculator).get_stats().await;
 
     for stat in stats.iter().take(10) {
         println!("{:?}", stat);

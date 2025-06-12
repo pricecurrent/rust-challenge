@@ -26,9 +26,12 @@ where
         }
     }
 
-    pub fn get_stats(&self) -> Vec<UserStats> {
-        let transfers = self.storage.get_sorted(TransferOrdering::Chronological);
-        self.calculator.calculate_user_stats(&transfers)
+    pub async fn get_stats(&self) -> Vec<UserStats> {
+        let transfers = self
+            .storage
+            .get_sorted(TransferOrdering::Chronological)
+            .await;
+        self.calculator.calculate_user_stats(&transfers.unwrap())
     }
 }
 
@@ -44,8 +47,8 @@ mod tests {
 
     use super::Analytics;
 
-    #[test]
-    fn delegates_to_calculator_to_retrieve_the_stats() -> Result<(), anyhow::Error> {
+    #[tokio::test]
+    async fn delegates_to_calculator_to_retrieve_the_stats() -> Result<(), anyhow::Error> {
         let storage = MockStorage::default();
         let mut calculator = MockCalculatesStats::new();
 
@@ -61,7 +64,7 @@ mod tests {
 
         let analytics = Analytics::new(storage, calculator);
 
-        let stats = analytics.get_stats();
+        let stats = analytics.get_stats().await;
 
         assert_eq!(stats.len(), 1);
 

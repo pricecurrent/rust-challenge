@@ -1,8 +1,10 @@
+use async_trait::async_trait;
+use clickhouse::error::Result;
+
 use crate::models::transfer::{Transfer, TransferOrdering};
 
-// todo: Think about returning impl Iterator in get methods
+#[async_trait]
 pub trait Storage {
-    fn get(&self) -> Vec<Transfer>;
-    fn get_sorted(&self, transfer_ordering: TransferOrdering) -> Vec<Transfer>;
-    fn insert_all(&mut self, transfers: Vec<Transfer>);
+    async fn get_sorted(&self, transfer_ordering: TransferOrdering) -> Result<Vec<Transfer>>;
+    async fn insert_all(&mut self, transfers: &[Transfer]) -> Result<()>;
 }
