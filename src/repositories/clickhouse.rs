@@ -1,12 +1,10 @@
+use super::storage::Storage;
+use crate::errors::StorageResult;
+use crate::models::transfer::{Transfer, TransferOrdering};
 use anyhow::Result;
 use async_trait::async_trait;
 use clickhouse::sql::Identifier;
 use clickhouse::Client;
-
-use crate::errors::StorageResult;
-use crate::models::transfer::{Transfer, TransferOrdering};
-
-use super::storage::Storage;
 
 pub const TABLE: &str = "transfers";
 
