@@ -8,9 +8,9 @@ pub struct SystemNow;
 
 impl Now for SystemNow {
     fn now_unix() -> u64 {
-        SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_else(|_| panic!("Time clock went backwards, can not continue"))
-            .as_secs()
+        match SystemTime::now().duration_since(UNIX_EPOCH) {
+            Ok(n) => n.as_secs(),
+            Err(_) => panic!("SystemTime before UNIX EPOCH!"),
+        }
     }
 }

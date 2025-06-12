@@ -1,9 +1,9 @@
-use anyhow::anyhow;
 use anyhow::Result;
 use async_trait::async_trait;
 use clickhouse::sql::Identifier;
 use clickhouse::Client;
 
+use crate::errors::StorageResult;
 use crate::models::transfer::{Transfer, TransferOrdering};
 
 use super::storage::Storage;
@@ -26,7 +26,7 @@ impl ClickhouseStorage {
             .with_option("wait_end_of_query", "1")
             .execute()
             .await
-            .map_err(|e| anyhow!("Could not drop table: {}", e))?;
+            .with_context(&format!("Could not drop the table {}", TABLE))?;
 
         let query = r"
             CREATE TABLE IF NOT EXISTS ? (
@@ -44,7 +44,7 @@ impl ClickhouseStorage {
             .bind(Identifier(TABLE))
             .execute()
             .await
-            .map_err(|e| anyhow!("Could not create table {}: {}", TABLE, e))?;
+            .with_context(&format!("Could not create table {}", TABLE))?;
 
         Ok(())
     }
@@ -53,13 +53,13 @@ impl ClickhouseStorage {
 #[async_trait]
 impl Storage for ClickhouseStorage {
     async fn get_sorted(&self, transfer_ordering: TransferOrdering) -> Result<Vec<Transfer>> {
-        let ordery_by_clause = match transfer_ordering {
+        let order_by_clause = match transfer_ordering {
             TransferOrdering::Raw => "",
             TransferOrdering::Chronological => " ORDER BY ts ASC",
             TransferOrdering::ByVolume => " ORDER BY amount DESC",
         };
 
-        let query = format!("SELECT * from ? {}", ordery_by_clause);
+        let query = format!("SELECT * from ? {}", order_by_clause);
 
         let res = self
             .client
@@ -67,7 +67,7 @@ impl Storage for ClickhouseStorage {
             .bind(Identifier(TABLE))
             .fetch_all::<Transfer>()
             .await
-            .map_err(|e| anyhow!("Could not fetch transfers: {}", e))?;
+            .with_context("Could not fetch transfers")?;
 
         Ok(res)
     }
@@ -76,19 +76,19 @@ impl Storage for ClickhouseStorage {
         let mut insert = self
             .client
             .insert("transfers")
-            .map_err(|e| anyhow!("Could not insert transfers: {}", e))?;
+            .with_context("Could not insert transfers")?;
 
         for row in transfers {
             insert
                 .write(row)
                 .await
-                .map_err(|e| anyhow!("Could not insert transfers: {}", e))?;
+                .with_context("Could not insert transfers")?;
         }
 
         insert
             .end()
             .await
-            .map_err(|e| anyhow!("Could not insert transfers: {}", e))?;
+            .with_context("Could not insert transfers")?;
 
         Ok(())
     }
@@ -112,7 +112,7 @@ mod tests {
     use dotenv::dotenv;
 
     #[tokio::test]
-    async fn inserting() {
+    async fn inserting() -> Result<()> {
         dotenv().ok();
         let mock = Mock::new();
         let client = Client::default().with_url(mock.url());
@@ -121,17 +121,19 @@ mod tests {
 
         let transfers = generator().build().generate(20);
 
-        storage.insert_all(&transfers).await.unwrap();
+        storage.insert_all(&transfers).await?;
 
         let rows: Vec<Transfer> = recording.collect().await;
 
         assert_eq!(rows, transfers);
+
+        Ok(())
     }
 
     #[tokio::test]
     async fn it_gets_sorted_data() -> Result<()> {
         dotenv().ok();
-        let config = ClickhouseClientConfig::from_env().unwrap();
+        let config = ClickhouseClientConfig::from_env()?;
         let mut storage = ClickhouseFactory::storage(config).await?;
 
         let transfers = vec![
@@ -151,10 +153,7 @@ mod tests {
 
         let _ = storage.insert_all(&transfers).await;
 
-        let res = storage
-            .get_sorted(TransferOrdering::Chronological)
-            .await
-            .unwrap();
+        let res = storage.get_sorted(TransferOrdering::Chronological).await?;
 
         assert_eq!(
             res,

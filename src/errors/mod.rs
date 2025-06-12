@@ -1,8 +1,12 @@
-#[derive(Debug)]
-pub enum StorageError {
-    Connection,
+use anyhow::anyhow;
+use clickhouse::error::Error;
+
+pub trait StorageResult<T> {
+    fn with_context(self, context: &str) -> anyhow::Result<T>;
 }
 
-pub enum ConfigError {
-    Env,
+impl<T> StorageResult<T> for clickhouse::error::Result<T, Error> {
+    fn with_context(self, context: &str) -> anyhow::Result<T> {
+        self.map_err(|e| anyhow!("{}: {}", context, e))
+    }
 }

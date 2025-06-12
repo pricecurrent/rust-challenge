@@ -44,12 +44,27 @@ mod tests {
     use anyhow::anyhow;
     use anyhow::Result;
 
-    use crate::{
-        models::user_stats::UserStats, repositories::mock::MockStorage,
-        services::stats::calculator::MockCalculatesStats,
-    };
+    use crate::models::transfer::Transfer;
+    use crate::repositories::mock::MockStorage;
+    use crate::repositories::storage::Storage;
+    use crate::services::stats::calculator::StatsCalculator;
+    use crate::{models::user_stats::UserStats, services::stats::calculator::MockCalculatesStats};
 
     use super::Analytics;
+
+    #[tokio::test]
+    async fn uses_chronologically_ordered_trasnfers_to_calculate_stats() {
+        let expected_transfers = vec![Transfer::default()];
+
+        let mut storage = MockStorage::default();
+        let _ = storage.insert_all(&expected_transfers);
+
+        let calculator = StatsCalculator::new();
+
+        let analytics = Analytics::new(storage, calculator);
+
+        let _ = analytics.get_stats().await;
+    }
 
     #[tokio::test]
     async fn delegates_to_calculator_to_retrieve_the_stats() -> Result<()> {

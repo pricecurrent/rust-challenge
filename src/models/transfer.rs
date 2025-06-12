@@ -10,6 +10,7 @@ pub struct Transfer {
     pub usd_price: f64,
 }
 
+#[derive(PartialEq, Eq)]
 pub enum TransferOrdering {
     Raw,
     Chronological,
