@@ -310,4 +310,11 @@ mod tests {
 
         Ok(())
     }
+
+    #[test]
+    fn empty_transfers() {
+        let transfers = StatsCalculator.calculate_user_stats(&vec![]);
+
+        assert_eq!(0, transfers.len());
+    }
 }

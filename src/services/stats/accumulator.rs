@@ -86,7 +86,7 @@ mod tests {
     }
 
     #[test]
-    fn accumulator_internals() {
+    fn calculates_internally_averages_total_volume_and_bax_balance() {
         let accumulator = PriceAccumulator {
             weight_buy_amount: 100.0,
             buy_volume: 10.0,
